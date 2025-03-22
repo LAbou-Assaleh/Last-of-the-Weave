@@ -35,14 +35,15 @@ class Game {
         // Canvas setup
         this.canvas = document.getElementById('game-canvas');
         this.ctx = this.canvas.getContext('2d');
-        this.resizeCanvas();
+        
+        // Game systems
+        this.timeManager = new TimeManager(FPS);
+        this.camera = new Camera(window.innerWidth, window.innerHeight);
+        this.resizeHandler = new ResizeHandler(this.canvas, this);
+        this.debugRenderer = new DebugRenderer(this);
         
         // UI
         this.ui = new UI(this);
-        
-        // Time tracking
-        this.lastFrameTime = 0;
-        this.gameTime = 0;
         
         // Input handling
         this.keys = {};
@@ -57,10 +58,23 @@ class Game {
      */
     init() {
         // Set up event listeners
-        window.addEventListener('resize', () => this.resizeCanvas());
-        
         window.addEventListener('keydown', (e) => {
             this.keys[e.key] = true;
+            
+            // Debug controls
+            if (e.key === 'F1') {
+                this.debugRenderer.toggle();
+                e.preventDefault();
+            } else if (e.key === 'F2') {
+                this.debugRenderer.toggleOption('showColliders');
+                e.preventDefault();
+            } else if (e.key === 'F3') {
+                this.debugRenderer.toggleOption('showGrid');
+                e.preventDefault();
+            } else if (e.key === 'F4') {
+                this.debugRenderer.toggleOption('showSpawnPoints');
+                e.preventDefault();
+            }
         });
         
         window.addEventListener('keyup', (e) => {
@@ -71,7 +85,31 @@ class Game {
             const rect = this.canvas.getBoundingClientRect();
             this.mouse.x = e.clientX - rect.left;
             this.mouse.y = e.clientY - rect.top;
+            
+            // Convert to world coordinates if camera exists
+            if (this.camera) {
+                const worldCoords = this.camera.screenToWorld(this.mouse.x, this.mouse.y);
+                this.mouse.worldX = worldCoords.x;
+                this.mouse.worldY = worldCoords.y;
+            }
         });
+        
+        // Set up world bounds
+        const worldSize = 2000;
+        this.worldBounds = {
+            minX: -worldSize / 2,
+            minY: -worldSize / 2,
+            maxX: worldSize / 2,
+            maxY: worldSize / 2
+        };
+        
+        // Set camera bounds
+        this.camera.setBounds(
+            this.worldBounds.minX,
+            this.worldBounds.minY,
+            this.worldBounds.maxX,
+            this.worldBounds.maxY
+        );
         
         // Subscribe to events
         eventEmitter.on('enemy:death', (data) => {
@@ -93,14 +131,14 @@ class Game {
         eventEmitter.on('area:created', (data) => {
             this.areas.push(data.area);
         });
-    }
-    
-    /**
-     * Resize canvas to fill window
-     */
-    resizeCanvas() {
-        this.canvas.width = window.innerWidth;
-        this.canvas.height = window.innerHeight;
+        
+        eventEmitter.on('canvas:resize', (data) => {
+            // Update camera dimensions
+            if (this.camera) {
+                this.camera.width = data.width;
+                this.camera.height = data.height;
+            }
+        });
     }
     
     /**
@@ -124,14 +162,19 @@ class Game {
             levelReached: 1
         };
         
+        // Reset time manager
+        this.timeManager.reset();
+        
         // Create player
         this.player = CharacterFactory.createCharacter(characterType);
+        
+        // Set camera target to player
+        this.camera.setTarget(this.player);
         
         // Start first wave
         this.startWave(1);
         
         // Start game loop
-        this.lastFrameTime = performance.now();
         requestAnimationFrame((timestamp) => this.gameLoop(timestamp));
     }
     
@@ -155,9 +198,8 @@ class Game {
      * @param {number} timestamp - Current timestamp
      */
     gameLoop(timestamp) {
-        // Calculate delta time
-        const deltaTime = (timestamp - this.lastFrameTime) / 1000; // in seconds
-        this.lastFrameTime = timestamp;
+        // Update time manager
+        const deltaTime = this.timeManager.update(timestamp);
         
         // Update game if not paused
         if (this.state === GAME_STATES.PLAYING && !this.isPaused) {
@@ -192,6 +234,11 @@ class Game {
             
             // Update player
             this.player.update(deltaTime, this.enemies);
+        }
+        
+        // Update camera
+        if (this.camera && this.player && this.player.isAlive) {
+            this.camera.update(deltaTime);
         }
         
         // Update wave
@@ -342,6 +389,11 @@ class Game {
         // Clear canvas
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         
+        // Apply camera transformation
+        if (this.camera) {
+            this.camera.apply(this.ctx);
+        }
+        
         // Draw background
         this.drawBackground();
         
@@ -358,32 +410,84 @@ class Game {
         if (this.player) {
             this.player.draw(this.ctx);
         }
+        
+        // Restore camera transformation
+        if (this.camera) {
+            this.camera.restore(this.ctx);
+        }
+        
+        // Draw debug information
+        if (this.debugRenderer) {
+            this.debugRenderer.render(this.ctx, this.timeManager, this.camera);
+        }
     }
     
     /**
      * Draw background
      */
     drawBackground() {
+        // Draw world background
         this.ctx.fillStyle = '#1a1a1a';
-        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         
-        // Draw grid
+        if (this.camera) {
+            // Draw only the visible area
+            this.ctx.fillRect(
+                this.camera.x,
+                this.camera.y,
+                this.camera.width / this.camera.scale,
+                this.camera.height / this.camera.scale
+            );
+            
+            // Draw grid if not handled by debug renderer
+            if (!this.debugRenderer || !this.debugRenderer.isEnabled || !this.debugRenderer.options.showGrid) {
+                this.drawGrid();
+            }
+        } else {
+            // Draw full canvas
+            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+            
+            // Draw grid
+            this.drawGrid();
+        }
+    }
+    
+    /**
+     * Draw grid
+     */
+    drawGrid() {
         this.ctx.strokeStyle = '#333333';
         this.ctx.lineWidth = 1;
         
         const gridSize = 50;
         
-        for (let x = 0; x < this.canvas.width; x += gridSize) {
+        // Calculate grid boundaries based on camera position
+        let startX, startY, endX, endY;
+        
+        if (this.camera) {
+            startX = Math.floor(this.camera.x / gridSize) * gridSize;
+            startY = Math.floor(this.camera.y / gridSize) * gridSize;
+            endX = this.camera.x + (this.camera.width / this.camera.scale) + gridSize;
+            endY = this.camera.y + (this.camera.height / this.camera.scale) + gridSize;
+        } else {
+            startX = 0;
+            startY = 0;
+            endX = this.canvas.width;
+            endY = this.canvas.height;
+        }
+        
+        // Draw vertical lines
+        for (let x = startX; x <= endX; x += gridSize) {
             this.ctx.beginPath();
-            this.ctx.moveTo(x, 0);
-            this.ctx.lineTo(x, this.canvas.height);
+            this.ctx.moveTo(x, startY);
+            this.ctx.lineTo(x, endY);
             this.ctx.stroke();
         }
         
-        for (let y = 0; y < this.canvas.height; y += gridSize) {
+        // Draw horizontal lines
+        for (let y = startY; y <= endY; y += gridSize) {
             this.ctx.beginPath();
-            this.ctx.moveTo(0, y);
-            this.ctx.lineTo(this.canvas.width, y);
+            this.ctx.moveTo(startX, y);
+            this.ctx.lineTo(endX, y);
             this.ctx.stroke();
         }
     }
@@ -393,7 +497,10 @@ class Game {
      */
     drawEnemies() {
         this.enemies.forEach(enemy => {
-            enemy.draw(this.ctx);
+            // Only draw if visible in camera
+            if (!this.camera || this.camera.isVisible(enemy)) {
+                enemy.draw(this.ctx);
+            }
         });
     }
     
@@ -402,10 +509,13 @@ class Game {
      */
     drawProjectiles() {
         this.projectiles.forEach(projectile => {
-            this.ctx.fillStyle = this.getElementColor(projectile.element || ELEMENT_TYPES.PHYSICAL);
-            this.ctx.beginPath();
-            this.ctx.arc(projectile.x, projectile.y, projectile.size / 2, 0, Math.PI * 2);
-            this.ctx.fill();
+            // Only draw if visible in camera
+            if (!this.camera || this.camera.isVisible(projectile)) {
+                this.ctx.fillStyle = this.getElementColor(projectile.element || ELEMENT_TYPES.PHYSICAL);
+                this.ctx.beginPath();
+                this.ctx.arc(projectile.x, projectile.y, projectile.size / 2, 0, Math.PI * 2);
+                this.ctx.fill();
+            }
         });
     }
     
@@ -414,20 +524,27 @@ class Game {
      */
     drawAreas() {
         this.areas.forEach(area => {
-            const elapsedTime = (performance.now() - area.startTime) / 1000;
-            const progress = elapsedTime / area.duration;
-            const alpha = 1 - progress;
-            
-            this.ctx.fillStyle = this.getElementColor(area.element || ELEMENT_TYPES.PHYSICAL, alpha * 0.3);
-            this.ctx.beginPath();
-            this.ctx.arc(area.x, area.y, area.radius, 0, Math.PI * 2);
-            this.ctx.fill();
-            
-            this.ctx.strokeStyle = this.getElementColor(area.element || ELEMENT_TYPES.PHYSICAL, alpha);
-            this.ctx.lineWidth = 3;
-            this.ctx.beginPath();
-            this.ctx.arc(area.x, area.y, area.radius, 0, Math.PI * 2);
-            this.ctx.stroke();
+            // Only draw if visible in camera
+            if (!this.camera || this.camera.isVisible({
+                x: area.x,
+                y: area.y,
+                size: area.radius * 2
+            })) {
+                const elapsedTime = (performance.now() - area.startTime) / 1000;
+                const progress = elapsedTime / area.duration;
+                const alpha = 1 - progress;
+                
+                this.ctx.fillStyle = this.getElementColor(area.element || ELEMENT_TYPES.PHYSICAL, alpha * 0.3);
+                this.ctx.beginPath();
+                this.ctx.arc(area.x, area.y, area.radius, 0, Math.PI * 2);
+                this.ctx.fill();
+                
+                this.ctx.strokeStyle = this.getElementColor(area.element || ELEMENT_TYPES.PHYSICAL, alpha);
+                this.ctx.lineWidth = 3;
+                this.ctx.beginPath();
+                this.ctx.arc(area.x, area.y, area.radius, 0, Math.PI * 2);
+                this.ctx.stroke();
+            }
         });
     }
     
@@ -474,7 +591,7 @@ class Game {
      */
     resume() {
         this.isPaused = false;
-        this.lastFrameTime = performance.now();
+        this.timeManager.reset();
     }
     
     /**

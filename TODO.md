@@ -15,22 +15,37 @@ This file tracks prioritized tasks, dependencies, and status for the Last of the
 - [✓] Create basic project structure
 - [✓] Set up HTML, CSS, and JavaScript foundation
 - [✓] Create documentation files (PROGRESS.md, TODO.md, DECISIONS.md)
-- [ ] Create development roadmap
-- [ ] Push initial setup to GitHub repository
+- [✓] Create development roadmap
+- [✓] Push initial setup to GitHub repository
 
 ## Core Game Mechanics
 
-- [ ] Implement canvas rendering system
+- [✓] Implement canvas rendering system
   - Dependencies: None
   - Priority: High
+  - Subtasks:
+    - [✓] Fix canvas resizing to properly handle window size changes
+    - [✓] Implement proper game loop with consistent frame timing
+    - [✓] Create camera/viewport system for game world
+    - [✓] Add debug rendering options for development
 
-- [ ] Implement player character movement
+- [✓] Implement player character movement
   - Dependencies: Canvas rendering system
   - Priority: High
+  - Subtasks:
+    - [✓] Implement smooth keyboard input handling
+    - [✓] Add acceleration and deceleration for natural movement
+    - [✓] Implement boundary collision detection
+    - [✓] Add visual feedback for player movement direction
 
-- [ ] Implement enemy spawning system
+- [✓] Implement enemy spawning system
   - Dependencies: Canvas rendering system
   - Priority: High
+  - Subtasks:
+    - [✓] Create wave-based spawning system with increasing difficulty
+    - [✓] Implement spawn points outside visible screen area
+    - [✓] Add basic enemy movement AI to follow player
+    - [✓] Create different enemy types with varying behaviors
 
 - [ ] Implement collision detection
   - Dependencies: Player movement, Enemy spawning
