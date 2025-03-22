@@ -64,9 +64,26 @@ This file tracks the development progress of the Last of the Weave game, a brows
 - Enhanced game.js to handle new movement mechanics
 - Updated main.js with dash UI elements and event handling
 
+### Character Selection System Fix - March 22, 2025
+
+- Fixed critical bug in character selection system:
+  - Identified missing CharacterFactory implementation causing game to fail at character selection
+  - Created CharacterFactory class with proper implementation for different character types
+  - Implemented character type validation and default fallback
+  - Added unique stats and attributes for each character type (Warrior, Mage, Ranger)
+  - Integrated CharacterFactory with the game's start sequence
+- Enhanced character creation process:
+  - Implemented proper scaling of base stats for different character types
+  - Added character-specific size adjustments
+  - Created balanced stat distributions for different playstyles
+  - Implemented proper error handling for invalid character types
+- Updated HTML structure to include the new CharacterFactory script
+- Tested and verified character selection functionality across all character types
+- Fixed GitHub Pages deployment issues related to character selection
+
 ## Current Status
 
-The project now has an advanced movement system implemented on top of the core gameplay mechanics. Players can move around the game world with smooth controls that include momentum-based physics and a dash ability for quick evasive maneuvers. The movement system provides visual feedback through trail effects and dash animations. Enemies spawn and follow the player, and the basic game loop is working. The canvas rendering system provides a solid foundation for future visual enhancements. The next steps will focus on implementing collision detection, combat system, and experience/leveling mechanics.
+The project now has a fully functional character selection system and advanced movement mechanics implemented on top of the core gameplay. Players can select from three character types (Warrior, Mage, Ranger), each with unique stats and attributes, and move around the game world with smooth controls that include momentum-based physics and a dash ability for quick evasive maneuvers. The movement system provides visual feedback through trail effects and dash animations. Enemies spawn and follow the player, and the basic game loop is working. The canvas rendering system provides a solid foundation for future visual enhancements. The next steps will focus on implementing collision detection, combat system, and experience/leveling mechanics.
 
 ## Next Steps
 
@@ -79,4 +96,4 @@ The project now has an advanced movement system implemented on top of the core g
 
 ## Known Issues
 
-- None at this stage (advanced movement implementation)
+- None at this stage (character selection and movement systems fully functional)

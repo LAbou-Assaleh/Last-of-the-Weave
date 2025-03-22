@@ -58,6 +58,15 @@ This file documents key architectural choices, technology selections, design pat
   - Makes it easier to add new entity types
   - Provides a consistent interface for object creation
 
+#### CharacterFactory Implementation
+- **Decision**: Create a dedicated CharacterFactory class for character instantiation
+- **Rationale**:
+  - Separates character creation logic from game flow
+  - Enables different character types with unique stats and attributes
+  - Provides a single point of modification for character creation
+  - Implements validation and fallback mechanisms for error handling
+  - Facilitates future addition of new character types
+
 ### Observer Pattern (via Event Emitter)
 - **Decision**: Implement observer pattern through the event emitter
 - **Rationale**:
@@ -73,6 +82,14 @@ This file documents key architectural choices, technology selections, design pat
   - Simplifies the handling of state-specific behavior
 
 ## Game Mechanics
+
+### Character Type System
+- **Decision**: Implement three distinct character types (Warrior, Mage, Ranger) with unique attributes
+- **Rationale**:
+  - Provides gameplay variety and replayability
+  - Allows players to choose a playstyle that suits their preferences
+  - Creates strategic depth through different character strengths and weaknesses
+  - Establishes a foundation for future character-specific abilities and upgrades
 
 ### Auto-Attack System
 - **Decision**: Implement auto-attacking for the player character
