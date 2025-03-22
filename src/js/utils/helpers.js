@@ -80,6 +80,34 @@ function pointInCircle(point, circle) {
 }
 
 /**
+ * Check if two game entities are colliding
+ * @param {Object} entity1 - First entity with x, y, and size properties
+ * @param {Object} entity2 - Second entity with x, y, and size properties
+ * @returns {boolean} - True if entities are colliding
+ */
+function checkCollision(entity1, entity2) {
+    // Convert entity size to radius (assuming size is diameter)
+    const radius1 = entity1.stats.size / 2;
+    const radius2 = entity2.stats.size / 2;
+    
+    // Create circle objects for collision check
+    const circle1 = {
+        x: entity1.x,
+        y: entity1.y,
+        radius: radius1
+    };
+    
+    const circle2 = {
+        x: entity2.x,
+        y: entity2.y,
+        radius: radius2
+    };
+    
+    // Use existing circleCollision function
+    return circleCollision(circle1, circle2);
+}
+
+/**
  * Get a color with random RGB values
  * @returns {string} - CSS color string
  */

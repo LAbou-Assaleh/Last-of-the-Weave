@@ -61,10 +61,20 @@ This file tracks prioritized tasks, dependencies, and status for the Last of the
 - [🔄] Implement collision detection
   - Dependencies: Player movement, Enemy spawning
   - Priority: High
+  - Subtasks:
+    - [ ] Create checkCollision function in helpers.js
+    - [ ] Implement circle-based collision detection between entities
+    - [ ] Add collision response for player-enemy interactions
+    - [ ] Optimize collision detection for performance
 
 - [🔄] Implement combat system (auto-attack)
   - Dependencies: Collision detection
   - Priority: High
+  - Subtasks:
+    - [✓] Implement basic attack logic in character.js
+    - [✓] Add attack animations and visual feedback
+    - [ ] Connect attack system with collision detection
+    - [ ] Implement enemy damage and death
 
 - [ ] Implement experience and leveling system
   - Dependencies: Combat system
@@ -78,14 +88,14 @@ This file tracks prioritized tasks, dependencies, and status for the Last of the
 
 ## Game Systems
 
-- [ ] Implement wave management
+- [🔄] Implement wave management
   - Dependencies: Enemy spawning system
   - Priority: High
   - Subtasks:
-    - [ ] Implement difficulty ramping with each wave
+    - [🔄] Implement difficulty ramping with each wave
     - [ ] Add boss waves every 10 waves
     - [ ] Create special boss enemies with unique abilities
-    - [ ] Scale enemy health and damage with wave progression
+    - [🔄] Scale enemy health and damage with wave progression
     - [ ] Add visual indicators for wave transitions
 
 - [ ] Implement ability/upgrade selection
@@ -122,7 +132,7 @@ This file tracks prioritized tasks, dependencies, and status for the Last of the
   - Dependencies: Combat system
   - Priority: Medium
 
-- [🔄] Implement character selection screen
+- [✓] Implement character selection screen
   - Dependencies: None
   - Priority: Medium
 
@@ -168,3 +178,26 @@ This file tracks prioritized tasks, dependencies, and status for the Last of the
 - [ ] Test cross-browser compatibility
   - Dependencies: Functional game
   - Priority: Medium
+
+## Bug Fixes
+
+- [🔄] Fix collision detection system
+  - Priority: Critical
+  - Subtasks:
+    - [✓] Implement missing checkCollision function in helpers.js
+    - [ ] Connect collision detection with combat system
+    - [ ] Test collision detection with different entity sizes
+
+- [🔄] Fix combat system
+  - Priority: Critical
+  - Subtasks:
+    - [ ] Ensure auto-attack works properly with collision detection
+    - [ ] Fix enemy attack logic
+    - [ ] Add proper combat feedback (visual and gameplay)
+
+- [🔄] Enhance wave spawning system
+  - Priority: High
+  - Subtasks:
+    - [✓] Implement proper difficulty scaling
+    - [✓] Add boss waves every 10 waves
+    - [✓] Fix enemy spawn positioning
