@@ -13,8 +13,25 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Add event listeners for UI buttons
     document.getElementById('start-button').addEventListener('click', () => {
-        // Get selected character type
-        const characterType = document.querySelector('input[name="character-type"]:checked').value;
+        // Get selected character type with error handling
+        let characterType = 'warrior'; // Default to warrior if nothing is selected
+        
+        try {
+            const selectedRadio = document.querySelector('input[name="character-type"]:checked');
+            if (selectedRadio) {
+                characterType = selectedRadio.value;
+                console.log('Selected character:', characterType);
+            } else {
+                console.warn('No character selected, defaulting to warrior');
+                // Force select the warrior radio button
+                const warriorRadio = document.querySelector('input[value="warrior"]');
+                if (warriorRadio) {
+                    warriorRadio.checked = true;
+                }
+            }
+        } catch (error) {
+            console.error('Error getting selected character:', error);
+        }
         
         // Hide menu
         document.getElementById('menu').style.display = 'none';
@@ -84,4 +101,23 @@ document.addEventListener('DOMContentLoaded', () => {
         
         requestAnimationFrame(updateDashCooldown);
     });
+
+    // Ensure character selection is working by adding click handlers to character options
+    const characterOptions = document.querySelectorAll('.character-option');
+    characterOptions.forEach(option => {
+        option.addEventListener('click', () => {
+            // Find the radio button inside this option and check it
+            const radio = option.querySelector('input[type="radio"]');
+            if (radio) {
+                radio.checked = true;
+                console.log('Character selected:', radio.value);
+            }
+        });
+    });
+
+    // Make sure warrior is selected by default
+    const warriorRadio = document.querySelector('input[value="warrior"]');
+    if (warriorRadio) {
+        warriorRadio.checked = true;
+    }
 });

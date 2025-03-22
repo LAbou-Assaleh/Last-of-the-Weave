@@ -67,6 +67,15 @@ This file documents key architectural choices, technology selections, design pat
   - Implements validation and fallback mechanisms for error handling
   - Facilitates future addition of new character types
 
+#### Robust Character Selection System
+- **Decision**: Implement a defensive character selection system with multiple fallback mechanisms
+- **Rationale**:
+  - Ensures game can start even when character selection encounters issues
+  - Provides graceful degradation instead of hard failures
+  - Improves user experience by preventing frustrating errors
+  - Makes the game more resilient to edge cases and unexpected states
+  - Allows for easier debugging and maintenance of the selection system
+
 ### Observer Pattern (via Event Emitter)
 - **Decision**: Implement observer pattern through the event emitter
 - **Rationale**:
@@ -91,6 +100,14 @@ This file documents key architectural choices, technology selections, design pat
   - Creates strategic depth through different character strengths and weaknesses
   - Establishes a foundation for future character-specific abilities and upgrades
 
+### Default Character Selection
+- **Decision**: Set Warrior as the default character type when no explicit selection is made
+- **Rationale**:
+  - Ensures the game can always start even if selection fails
+  - Provides a balanced starting experience for new players
+  - Simplifies onboarding for first-time players
+  - Creates a consistent fallback option for error handling
+
 ### Auto-Attack System
 - **Decision**: Implement auto-attacking for the player character
 - **Rationale**:
@@ -111,6 +128,24 @@ This file documents key architectural choices, technology selections, design pat
   - Provides diverse gameplay options
   - Creates interesting synergies between different abilities
   - Allows for strategic depth in character building
+
+## UI Design Decisions
+
+### Character Selection Interface
+- **Decision**: Use radio buttons with visual containers for character selection
+- **Rationale**:
+  - Provides clear visual feedback for selected character
+  - Follows standard UI patterns familiar to users
+  - Makes selection state visually apparent
+  - Allows for easy expansion with additional character types
+
+### Error Handling and Recovery
+- **Decision**: Implement multiple layers of error handling for critical game systems
+- **Rationale**:
+  - Prevents game-breaking errors from disrupting player experience
+  - Provides graceful degradation when issues occur
+  - Makes debugging easier by capturing and logging errors
+  - Improves overall game stability and reliability
 
 ## Future Considerations
 
