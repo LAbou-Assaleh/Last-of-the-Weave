@@ -39,6 +39,16 @@ class Character {
         this.targetVelocityX = 0;  // New: target velocity for smooth movement
         this.targetVelocityY = 0;  // New: target velocity for smooth movement
         this.maxSpeed = this.stats.speed;
+        this.momentum = { x: 0, y: 0 }; // New: momentum for physics-based movement
+        
+        // Dash ability
+        this.isDashing = false;
+        this.dashDuration = 0;
+        this.dashCooldown = 0;
+        this.dashDirection = { x: 0, y: 0 };
+        
+        // Movement trail
+        this.movementTrail = new MovementTrail(15, 0.6);
         
         // Combat
         this.lastAttackTime = 0;
@@ -72,8 +82,22 @@ class Character {
         // Update animation
         this.updateAnimation(deltaTime);
         
+        // Update dash cooldown
+        if (this.dashCooldown > 0) {
+            this.dashCooldown -= deltaTime;
+            if (this.dashCooldown < 0) this.dashCooldown = 0;
+        }
+        
+        // Update dash state
+        if (this.isDashing) {
+            this.updateDash(deltaTime);
+        }
+        
         // Update movement with smooth acceleration/deceleration
         this.updateMovement(deltaTime, worldBounds);
+        
+        // Update movement trail
+        this.updateMovementTrail(deltaTime);
         
         // Update visual effects
         this.updateEffects(deltaTime);
@@ -109,21 +133,87 @@ class Character {
     }
     
     /**
+     * Update dash state
+     * @param {number} deltaTime - Time since last update in seconds
+     */
+    updateDash(deltaTime) {
+        this.dashDuration -= deltaTime;
+        
+        if (this.dashDuration <= 0) {
+            // End dash
+            this.isDashing = false;
+            this.maxSpeed = this.stats.speed;
+            
+            // Apply momentum after dash
+            this.momentum.x = this.dashDirection.x * PLAYER_MOMENTUM_FACTOR;
+            this.momentum.y = this.dashDirection.y * PLAYER_MOMENTUM_FACTOR;
+            
+            // Emit dash end event
+            eventEmitter.emit('player:dashEnd', {
+                player: this
+            });
+        }
+    }
+    
+    /**
+     * Update movement trail
+     * @param {number} deltaTime - Time since last update in seconds
+     */
+    updateMovementTrail(deltaTime) {
+        // Update existing trail points
+        this.movementTrail.update(deltaTime);
+        
+        // Add new trail point if moving fast enough or dashing
+        const speed = Math.sqrt(this.velocityX * this.velocityX + this.velocityY * this.velocityY);
+        if (speed > 0.5 || this.isDashing) {
+            const trailSize = this.isDashing ? this.stats.size * 0.7 : this.stats.size * 0.4;
+            const trailColor = this.isDashing ? '#88ccff' : '#ffffff';
+            const trailAlpha = this.isDashing ? 0.8 : 0.5;
+            
+            this.movementTrail.addTrailPoint(
+                this.x, 
+                this.y, 
+                trailSize, 
+                trailColor, 
+                trailAlpha
+            );
+        }
+    }
+    
+    /**
      * Update character movement with smooth acceleration/deceleration
      * @param {number} deltaTime - Time since last update in seconds
      * @param {Object} worldBounds - World boundaries
      */
     updateMovement(deltaTime, worldBounds) {
-        // Apply acceleration/deceleration to reach target velocity
-        const accelRate = this.isMoving ? this.stats.acceleration : this.stats.deceleration;
-        
-        // X velocity
-        const diffX = this.targetVelocityX - this.velocityX;
-        this.velocityX += diffX * Math.min(accelRate * deltaTime, 1.0);
-        
-        // Y velocity
-        const diffY = this.targetVelocityY - this.velocityY;
-        this.velocityY += diffY * Math.min(accelRate * deltaTime, 1.0);
+        // If dashing, use dash direction instead of input
+        if (this.isDashing) {
+            this.velocityX = this.dashDirection.x;
+            this.velocityY = this.dashDirection.y;
+        } else {
+            // Apply acceleration/deceleration to reach target velocity
+            const accelRate = this.isMoving ? this.stats.acceleration : this.stats.deceleration;
+            
+            // Apply momentum to target velocity
+            let targetX = this.targetVelocityX + this.momentum.x;
+            let targetY = this.targetVelocityY + this.momentum.y;
+            
+            // X velocity
+            const diffX = targetX - this.velocityX;
+            this.velocityX += diffX * Math.min(accelRate * deltaTime, 1.0);
+            
+            // Y velocity
+            const diffY = targetY - this.velocityY;
+            this.velocityY += diffY * Math.min(accelRate * deltaTime, 1.0);
+            
+            // Apply friction to momentum
+            this.momentum.x *= (1 - PLAYER_FRICTION);
+            this.momentum.y *= (1 - PLAYER_FRICTION);
+            
+            // Reset momentum if very small
+            if (Math.abs(this.momentum.x) < 0.01) this.momentum.x = 0;
+            if (Math.abs(this.momentum.y) < 0.01) this.momentum.y = 0;
+        }
         
         // Apply velocity
         const prevX = this.x;
@@ -165,17 +255,21 @@ class Character {
             if (this.x - radius < worldBounds.minX) {
                 this.x = worldBounds.minX + radius;
                 this.velocityX = 0;
+                this.momentum.x = 0;
             } else if (this.x + radius > worldBounds.maxX) {
                 this.x = worldBounds.maxX - radius;
                 this.velocityX = 0;
+                this.momentum.x = 0;
             }
             
             if (this.y - radius < worldBounds.minY) {
                 this.y = worldBounds.minY + radius;
                 this.velocityY = 0;
+                this.momentum.y = 0;
             } else if (this.y + radius > worldBounds.maxY) {
                 this.y = worldBounds.maxY - radius;
                 this.velocityY = 0;
+                this.momentum.y = 0;
             }
         }
     }
@@ -213,6 +307,66 @@ class Character {
         
         this.targetVelocityX = x;
         this.targetVelocityY = y;
+    }
+    
+    /**
+     * Perform a dash in the current movement direction
+     * @returns {boolean} - Whether the dash was successful
+     */
+    dash() {
+        // Check if dash is on cooldown
+        if (this.dashCooldown > 0 || this.isDashing) {
+            return false;
+        }
+        
+        // Need a direction to dash in
+        if (!this.isMoving && (this.targetVelocityX === 0 && this.targetVelocityY === 0)) {
+            // Use facing direction if not moving
+            if (this.direction.x === 0 && this.direction.y === 0) {
+                return false;
+            }
+            
+            this.dashDirection = {
+                x: this.direction.x,
+                y: this.direction.y
+            };
+        } else {
+            // Use current movement direction
+            const length = Math.sqrt(
+                this.targetVelocityX * this.targetVelocityX + 
+                this.targetVelocityY * this.targetVelocityY
+            );
+            
+            if (length === 0) return false;
+            
+            this.dashDirection = {
+                x: this.targetVelocityX / length,
+                y: this.targetVelocityY / length
+            };
+        }
+        
+        // Start dash
+        this.isDashing = true;
+        this.dashDuration = PLAYER_DASH_DURATION;
+        this.dashCooldown = PLAYER_DASH_COOLDOWN;
+        this.maxSpeed = this.stats.speed * PLAYER_DASH_SPEED;
+        this.dashEffect = 1.0;
+        
+        // Emit dash start event
+        eventEmitter.emit('player:dashStart', {
+            player: this,
+            direction: this.dashDirection
+        });
+        
+        return true;
+    }
+    
+    /**
+     * Draw the character's movement trail
+     * @param {CanvasRenderingContext2D} ctx - Canvas context
+     */
+    drawMovementTrail(ctx) {
+        this.movementTrail.draw(ctx);
     }
     
     /**
@@ -307,8 +461,8 @@ class Character {
     gainExperience(amount) {
         this.experience += amount;
         
-        // Emit experience event
-        eventEmitter.emit('player:experience', {
+        // Emit experience gain event
+        eventEmitter.emit('player:experienceGain', {
             player: this,
             amount: amount,
             total: this.experience
@@ -326,14 +480,10 @@ class Character {
     levelUp() {
         this.level++;
         this.experience -= this.experienceToNextLevel;
+        this.experienceToNextLevel = Math.floor(PLAYER_XP_TO_LEVEL * (1 + this.level * 0.5));
         
-        // Increase experience required for next level
-        this.experienceToNextLevel = Math.floor(PLAYER_XP_TO_LEVEL * (1 + 0.1 * this.level));
-        
-        // Increase stats
-        this.stats.maxHealth += Math.floor(this.stats.maxHealth * 0.1);
-        this.stats.health = this.stats.maxHealth; // Heal to full on level up
-        this.stats.damage += Math.floor(this.stats.damage * 0.1);
+        // Heal on level up
+        this.stats.health = this.stats.maxHealth;
         
         // Emit level up event
         eventEmitter.emit('player:levelUp', {
@@ -343,149 +493,64 @@ class Character {
     }
     
     /**
-     * Add an ability
-     * @param {Ability} ability - Ability to add
-     */
-    addAbility(ability) {
-        if (ability.type === ABILITY_TYPES.ACTIVE) {
-            this.abilities.push(ability);
-        } else {
-            this.passives.push(ability);
-            ability.apply(this);
-        }
-        
-        // Emit ability added event
-        eventEmitter.emit('player:abilityAdded', {
-            player: this,
-            ability: ability
-        });
-    }
-    
-    /**
      * Draw the character
      * @param {CanvasRenderingContext2D} ctx - Canvas context
      */
     draw(ctx) {
-        if (!this.isAlive) return;
+        // Draw movement trail first (behind character)
+        this.drawMovementTrail(ctx);
         
-        // Save context
         ctx.save();
         
-        // Draw dash effect (motion trail)
-        if (this.dashEffect > 0) {
-            ctx.globalAlpha = this.dashEffect * 0.3;
-            ctx.fillStyle = this.getCharacterColor();
-            
-            // Draw trail in opposite direction of movement
-            const trailX = this.x - this.velocityX * this.stats.size;
-            const trailY = this.y - this.velocityY * this.stats.size;
-            
-            ctx.beginPath();
-            ctx.arc(trailX, trailY, this.stats.size / 2 * (0.7 + this.dashEffect * 0.3), 0, Math.PI * 2);
-            ctx.fill();
-            
-            // Reset alpha
-            ctx.globalAlpha = 1.0;
-        }
-        
-        // Apply hit effect (flash white when taking damage)
+        // Apply hit effect (red flash)
         if (this.hitEffect > 0) {
-            ctx.fillStyle = `rgba(255, 255, 255, ${this.hitEffect})`;
-        } else {
-            ctx.fillStyle = this.getCharacterColor();
+            ctx.fillStyle = `rgba(255, 0, 0, ${this.hitEffect * 0.5})`;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.stats.size * 1.2, 0, Math.PI * 2);
+            ctx.fill();
         }
         
-        // Draw character body
+        // Apply dash effect (blue trail)
+        if (this.dashEffect > 0 || this.isDashing) {
+            const dashAlpha = this.isDashing ? 0.7 : this.dashEffect * 0.7;
+            const dashSize = this.isDashing ? this.stats.size * 1.5 : this.stats.size * (1 + this.dashEffect * 0.5);
+            
+            ctx.fillStyle = `rgba(100, 200, 255, ${dashAlpha})`;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, dashSize, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        // Draw character
+        ctx.fillStyle = this.type === CHARACTER_TYPES.WARRIOR ? '#ff5555' : 
+                        this.type === CHARACTER_TYPES.MAGE ? '#5555ff' : 
+                        this.type === CHARACTER_TYPES.RANGER ? '#55ff55' : '#ffffff';
+        
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.stats.size / 2, 0, Math.PI * 2);
         ctx.fill();
         
         // Draw direction indicator
-        const dirX = this.x + this.direction.x * (this.stats.size / 2);
-        const dirY = this.y + this.direction.y * (this.stats.size / 2);
         ctx.fillStyle = '#ffffff';
+        const indicatorX = this.x + this.direction.x * (this.stats.size / 2);
+        const indicatorY = this.y + this.direction.y * (this.stats.size / 2);
         ctx.beginPath();
-        ctx.arc(dirX, dirY, this.stats.size / 6, 0, Math.PI * 2);
+        ctx.arc(indicatorX, indicatorY, this.stats.size / 6, 0, Math.PI * 2);
         ctx.fill();
         
-        // Draw health bar
-        const healthBarWidth = this.stats.size;
-        const healthBarHeight = 4;
-        const healthBarX = this.x - healthBarWidth / 2;
-        const healthBarY = this.y - this.stats.size / 2 - 10;
+        // Draw dash cooldown indicator if on cooldown
+        if (this.dashCooldown > 0) {
+            const cooldownRatio = this.dashCooldown / PLAYER_DASH_COOLDOWN;
+            const startAngle = -Math.PI / 2;
+            const endAngle = startAngle + (Math.PI * 2 * (1 - cooldownRatio));
+            
+            ctx.strokeStyle = '#88ccff';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.stats.size / 2 + 5, startAngle, endAngle);
+            ctx.stroke();
+        }
         
-        // Background
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-        ctx.fillRect(healthBarX, healthBarY, healthBarWidth, healthBarHeight);
-        
-        // Health
-        const healthPercentage = this.stats.health / this.stats.maxHealth;
-        ctx.fillStyle = '#ff3333';
-        ctx.fillRect(healthBarX, healthBarY, healthBarWidth * healthPercentage, healthBarHeight);
-        
-        // Restore context
         ctx.restore();
-    }
-    
-    /**
-     * Get character color based on type
-     * @returns {string} - CSS color
-     */
-    getCharacterColor() {
-        switch (this.type) {
-            case CHARACTER_TYPES.WARRIOR:
-                return '#ff5555';
-            case CHARACTER_TYPES.MAGE:
-                return '#5555ff';
-            case CHARACTER_TYPES.RANGER:
-                return '#55ff55';
-            default:
-                return '#ffffff';
-        }
-    }
-}
-
-// Character factory
-class CharacterFactory {
-    /**
-     * Create a character of the specified type
-     * @param {string} type - Character type from CHARACTER_TYPES
-     * @returns {Character} - New character instance
-     */
-    static createCharacter(type) {
-        switch (type) {
-            case CHARACTER_TYPES.WARRIOR:
-                return new Character(type, {
-                    health: PLAYER_BASE_HEALTH * 1.2,
-                    maxHealth: PLAYER_BASE_HEALTH * 1.2,
-                    damage: PLAYER_BASE_DAMAGE * 1.2,
-                    attackSpeed: PLAYER_BASE_ATTACK_SPEED * 0.8,
-                    attackRange: PLAYER_BASE_ATTACK_RANGE * 0.8,
-                    acceleration: 10.0,  // Faster acceleration for warrior
-                    deceleration: 8.0    // Slower deceleration for warrior
-                });
-            case CHARACTER_TYPES.MAGE:
-                return new Character(type, {
-                    health: PLAYER_BASE_HEALTH * 0.8,
-                    maxHealth: PLAYER_BASE_HEALTH * 0.8,
-                    damage: PLAYER_BASE_DAMAGE * 1.5,
-                    attackSpeed: PLAYER_BASE_ATTACK_SPEED * 0.7,
-                    attackRange: PLAYER_BASE_ATTACK_RANGE * 1.5,
-                    acceleration: 7.0,   // Slower acceleration for mage
-                    deceleration: 14.0   // Faster deceleration for mage
-                });
-            case CHARACTER_TYPES.RANGER:
-                return new Character(type, {
-                    health: PLAYER_BASE_HEALTH * 0.9,
-                    maxHealth: PLAYER_BASE_HEALTH * 0.9,
-                    damage: PLAYER_BASE_DAMAGE * 0.9,
-                    attackSpeed: PLAYER_BASE_ATTACK_SPEED * 1.5,
-                    attackRange: PLAYER_BASE_ATTACK_RANGE * 1.2,
-                    acceleration: 12.0,  // Fastest acceleration for ranger
-                    deceleration: 12.0   // Balanced deceleration for ranger
-                });
-            default:
-                return new Character(CHARACTER_TYPES.WARRIOR);
-        }
     }
 }

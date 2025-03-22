@@ -39,6 +39,16 @@ This file tracks prioritized tasks, dependencies, and status for the Last of the
     - [✓] Implement boundary collision detection
     - [✓] Add visual feedback for player movement direction
 
+- [✓] Implement advanced movement mechanics
+  - Dependencies: Player movement
+  - Priority: High
+  - Subtasks:
+    - [✓] Implement dash ability with cooldown
+    - [✓] Add momentum-based physics for movement
+    - [✓] Create visual trail effects for movement
+    - [✓] Add UI indicators for dash status
+    - [✓] Implement spacebar control for dash
+
 - [✓] Implement enemy spawning system
   - Dependencies: Canvas rendering system
   - Priority: High
@@ -118,9 +128,14 @@ This file tracks prioritized tasks, dependencies, and status for the Last of the
 
 ## Visual and Polish
 
-- [ ] Add basic visual effects for abilities
-  - Dependencies: Ability system
+- [✓] Add movement visual effects
+  - Dependencies: Player movement
   - Priority: Medium
+  - Subtasks:
+    - [✓] Create movement trail system
+    - [✓] Add dash visual effects
+    - [✓] Implement momentum visual feedback
+    - [✓] Add cooldown indicators for abilities
 
 - [✓] Add visual feedback for attacks and damage
   - Dependencies: Combat system

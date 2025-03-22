@@ -19,6 +19,13 @@ const PLAYER_BASE_ATTACK_RANGE = 200;
 const PLAYER_BASE_PICKUP_RANGE = 100;
 const PLAYER_XP_TO_LEVEL = 100; // Base XP needed for first level
 
+// Movement Settings
+const PLAYER_DASH_SPEED = 15; // Speed multiplier during dash
+const PLAYER_DASH_DURATION = 0.2; // Seconds
+const PLAYER_DASH_COOLDOWN = 1.5; // Seconds
+const PLAYER_MOMENTUM_FACTOR = 0.8; // How much momentum is preserved (0-1)
+const PLAYER_FRICTION = 0.05; // Friction applied when not actively moving
+
 // Enemy Settings
 const ENEMY_BASE_HEALTH = 50;
 const ENEMY_BASE_DAMAGE = 5;

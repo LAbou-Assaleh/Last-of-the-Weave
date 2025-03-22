@@ -4,67 +4,310 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Last of the Weave</title>
-    <link rel="stylesheet" href="src/css/style.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #111;
+            font-family: Arial, sans-serif;
+            color: #fff;
+        }
+        
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+        
+        #game-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        
+        #menu {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 10;
+        }
+        
+        #menu h1 {
+            font-size: 3rem;
+            margin-bottom: 2rem;
+            color: #ff5555;
+            text-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+        }
+        
+        #character-selection {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 2rem;
+        }
+        
+        .character-option {
+            margin: 0 1rem;
+            padding: 1rem;
+            background-color: #222;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .character-option:hover {
+            background-color: #333;
+            transform: scale(1.05);
+        }
+        
+        .character-option input {
+            margin-right: 0.5rem;
+        }
+        
+        #start-button {
+            padding: 1rem 2rem;
+            font-size: 1.5rem;
+            background-color: #ff5555;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        #start-button:hover {
+            background-color: #ff7777;
+            transform: scale(1.05);
+        }
+        
+        #game-ui {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: none;
+        }
+        
+        #health-bar {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            width: 200px;
+            height: 20px;
+            background-color: #333;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        #health-fill {
+            width: 100%;
+            height: 100%;
+            background-color: #ff5555;
+            transition: width 0.2s;
+        }
+        
+        #xp-bar {
+            position: absolute;
+            top: 50px;
+            left: 20px;
+            width: 200px;
+            height: 10px;
+            background-color: #333;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        
+        #xp-fill {
+            width: 0%;
+            height: 100%;
+            background-color: #55ff55;
+            transition: width 0.2s;
+        }
+        
+        #level-indicator {
+            position: absolute;
+            top: 20px;
+            left: 230px;
+            font-size: 1.2rem;
+        }
+        
+        #wave-indicator {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 1.2rem;
+        }
+        
+        #time-indicator {
+            position: absolute;
+            top: 50px;
+            right: 20px;
+            font-size: 1.2rem;
+        }
+        
+        #pause-button {
+            position: absolute;
+            top: 20px;
+            right: 150px;
+            padding: 0.5rem 1rem;
+            background-color: #555;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            pointer-events: auto;
+        }
+        
+        #game-over {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 20;
+        }
+        
+        #game-over h2 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            color: #ff5555;
+        }
+        
+        #game-over p {
+            font-size: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        #restart-button {
+            padding: 1rem 2rem;
+            font-size: 1.5rem;
+            background-color: #ff5555;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        .controls-info {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 10px;
+            border-radius: 5px;
+        }
+        
+        .controls-info h3 {
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+        
+        .controls-info p {
+            margin: 5px 0;
+        }
+        
+        .dash-info {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 10px;
+            border-radius: 5px;
+        }
+        
+        .dash-active {
+            color: #88ccff;
+            font-weight: bold;
+        }
+        
+        .dash-cooldown {
+            color: #ff8888;
+        }
+    </style>
 </head>
 <body>
     <div id="game-container">
-        <div id="game-canvas-container">
-            <canvas id="game-canvas"></canvas>
-        </div>
-        <div id="ui-container">
-            <div id="health-bar-container">
-                <div id="health-bar"></div>
-            </div>
-            <div id="xp-bar-container">
-                <div id="xp-bar"></div>
-            </div>
-            <div id="wave-counter">Wave: 1</div>
-            <div id="time-counter">Time: 00:00</div>
-        </div>
-        <div id="upgrade-panel" class="hidden">
-            <h2>Choose an Upgrade</h2>
-            <div id="upgrade-options"></div>
-        </div>
-        <div id="game-over-screen" class="hidden">
-            <h2>Game Over</h2>
-            <div id="score-summary"></div>
-            <button id="restart-button">Play Again</button>
-        </div>
-        <div id="start-screen">
+        <canvas id="game-canvas"></canvas>
+        
+        <div id="menu">
             <h1>Last of the Weave</h1>
-            <p>Survive endless waves of enemies by weaving together powerful abilities</p>
             <div id="character-selection">
-                <h2>Select Your Weaver</h2>
-                <div id="character-options"></div>
+                <label class="character-option">
+                    <input type="radio" name="character-type" value="warrior" checked>
+                    Warrior
+                </label>
+                <label class="character-option">
+                    <input type="radio" name="character-type" value="mage">
+                    Mage
+                </label>
+                <label class="character-option">
+                    <input type="radio" name="character-type" value="ranger">
+                    Ranger
+                </label>
             </div>
             <button id="start-button">Start Game</button>
-            <div class="debug-controls">
-                <p>Debug Controls: F1 - Toggle Debug, F2 - Toggle Colliders, F3 - Toggle Grid</p>
+        </div>
+        
+        <div id="game-ui">
+            <div id="health-bar">
+                <div id="health-fill"></div>
             </div>
+            <div id="xp-bar">
+                <div id="xp-fill"></div>
+            </div>
+            <div id="level-indicator">Level: 1</div>
+            <div id="wave-indicator">Wave: 1</div>
+            <div id="time-indicator">Time: 00:00</div>
+            <button id="pause-button">Pause</button>
+        </div>
+        
+        <div id="game-over">
+            <h2>Game Over</h2>
+            <p>You survived for <span id="final-time">00:00</span></p>
+            <p>Reached level <span id="final-level">1</span></p>
+            <p>Defeated <span id="final-enemies">0</span> enemies</p>
+            <button id="restart-button">Play Again</button>
         </div>
     </div>
-
-    <!-- Core Game Scripts -->
+    
+    <!-- Utility Scripts -->
     <script src="src/js/utils/constants.js"></script>
     <script src="src/js/utils/helpers.js"></script>
     <script src="src/js/utils/eventEmitter.js"></script>
-    <script src="src/js/utils/camera.js"></script>
     <script src="src/js/utils/timeManager.js"></script>
     <script src="src/js/utils/resizeHandler.js"></script>
     <script src="src/js/utils/debugRenderer.js"></script>
+    <script src="src/js/utils/camera.js"></script>
     <script src="src/js/utils/attackAnimations.js"></script>
-    <script src="src/js/utils/enemyAttackEffects.js"></script>
     <script src="src/js/utils/damageEffects.js"></script>
+    <script src="src/js/utils/enemyAttackEffects.js"></script>
+    <script src="src/js/utils/movementTrail.js"></script>
     
-    <!-- Game Components -->
+    <!-- Game Objects -->
+    <script src="src/js/abilities/ability.js"></script>
     <script src="src/js/characters/character.js"></script>
     <script src="src/js/enemies/enemy.js"></script>
-    <script src="src/js/abilities/ability.js"></script>
     
-    <!-- UI Components -->
+    <!-- UI -->
     <script src="src/js/ui/ui.js"></script>
     
-    <!-- Main Game Logic -->
+    <!-- Main Game -->
     <script src="src/js/game.js"></script>
     <script src="src/js/main.js"></script>
 </body>

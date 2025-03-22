@@ -5,8 +5,8 @@
 
 /**
  * Calculate distance between two points
- * @param {Object} point1 - {x, y} coordinates
- * @param {Object} point2 - {x, y} coordinates
+ * @param {Object} point1 - First point with x and y properties
+ * @param {Object} point2 - Second point with x and y properties
  * @returns {number} - Distance between points
  */
 function distance(point1, point2) {
@@ -16,102 +16,13 @@ function distance(point1, point2) {
 }
 
 /**
- * Generate a random number between min and max (inclusive)
- * @param {number} min - Minimum value
- * @param {number} max - Maximum value
- * @returns {number} - Random number
- */
-function randomRange(min, max) {
-    return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-
-/**
- * Generate a random position within the game boundaries
- * @param {number} padding - Padding from the edges
- * @returns {Object} - {x, y} coordinates
- */
-function randomPosition(padding = 50) {
-    return {
-        x: randomRange(padding, GAME_WIDTH - padding),
-        y: randomRange(padding, GAME_HEIGHT - padding)
-    };
-}
-
-/**
- * Generate a random position outside the game boundaries
- * @param {number} padding - Distance outside the boundaries
- * @returns {Object} - {x, y} coordinates
- */
-function randomPositionOutsideScreen(padding = 100) {
-    // Decide which side to spawn from (0: top, 1: right, 2: bottom, 3: left)
-    const side = Math.floor(Math.random() * 4);
-    
-    let x, y;
-    
-    switch (side) {
-        case 0: // Top
-            x = randomRange(-padding, GAME_WIDTH + padding);
-            y = -padding;
-            break;
-        case 1: // Right
-            x = GAME_WIDTH + padding;
-            y = randomRange(-padding, GAME_HEIGHT + padding);
-            break;
-        case 2: // Bottom
-            x = randomRange(-padding, GAME_WIDTH + padding);
-            y = GAME_HEIGHT + padding;
-            break;
-        case 3: // Left
-            x = -padding;
-            y = randomRange(-padding, GAME_HEIGHT + padding);
-            break;
-    }
-    
-    return { x, y };
-}
-
-/**
- * Format time in MM:SS format
- * @param {number} seconds - Time in seconds
- * @returns {string} - Formatted time string
- */
-function formatTime(seconds) {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = Math.floor(seconds % 60);
-    return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
-}
-
-/**
- * Check if two objects are colliding (simple circle collision)
- * @param {Object} obj1 - First object with x, y, and size properties
- * @param {Object} obj2 - Second object with x, y, and size properties
- * @returns {boolean} - True if colliding, false otherwise
- */
-function checkCollision(obj1, obj2) {
-    const combinedRadius = (obj1.size + obj2.size) / 2;
-    return distance({x: obj1.x, y: obj1.y}, {x: obj2.x, y: obj2.y}) < combinedRadius;
-}
-
-/**
- * Calculate angle between two points
- * @param {Object} point1 - {x, y} coordinates
- * @param {Object} point2 - {x, y} coordinates
+ * Get angle between two points in radians
+ * @param {Object} point1 - First point with x and y properties
+ * @param {Object} point2 - Second point with x and y properties
  * @returns {number} - Angle in radians
  */
-function calculateAngle(point1, point2) {
+function angle(point1, point2) {
     return Math.atan2(point2.y - point1.y, point2.x - point1.x);
-}
-
-/**
- * Get direction vector from angle
- * @param {number} angle - Angle in radians
- * @returns {Object} - {x, y} direction vector
- */
-function getDirectionFromAngle(angle) {
-    return {
-        x: Math.cos(angle),
-        y: Math.sin(angle)
-    };
 }
 
 /**
@@ -122,16 +33,127 @@ function getDirectionFromAngle(angle) {
  * @returns {number} - Clamped value
  */
 function clamp(value, min, max) {
-    return Math.min(Math.max(value, min), max);
+    return Math.max(min, Math.min(value, max));
 }
 
 /**
  * Linear interpolation between two values
- * @param {number} start - Start value
- * @param {number} end - End value
+ * @param {number} a - Start value
+ * @param {number} b - End value
  * @param {number} t - Interpolation factor (0-1)
  * @returns {number} - Interpolated value
  */
-function lerp(start, end, t) {
-    return start + (end - start) * t;
+function lerp(a, b, t) {
+    return a + (b - a) * t;
+}
+
+/**
+ * Generate a random integer between min and max (inclusive)
+ * @param {number} min - Minimum value
+ * @param {number} max - Maximum value
+ * @returns {number} - Random integer
+ */
+function randomInt(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+/**
+ * Check if two circles are colliding
+ * @param {Object} circle1 - First circle with x, y, and radius properties
+ * @param {Object} circle2 - Second circle with x, y, and radius properties
+ * @returns {boolean} - True if colliding
+ */
+function circleCollision(circle1, circle2) {
+    const dist = distance(circle1, circle2);
+    return dist < circle1.radius + circle2.radius;
+}
+
+/**
+ * Check if a point is inside a circle
+ * @param {Object} point - Point with x and y properties
+ * @param {Object} circle - Circle with x, y, and radius properties
+ * @returns {boolean} - True if point is inside circle
+ */
+function pointInCircle(point, circle) {
+    const dist = distance(point, circle);
+    return dist < circle.radius;
+}
+
+/**
+ * Get a color with random RGB values
+ * @returns {string} - CSS color string
+ */
+function randomColor() {
+    const r = randomInt(0, 255);
+    const g = randomInt(0, 255);
+    const b = randomInt(0, 255);
+    return `rgb(${r}, ${g}, ${b})`;
+}
+
+/**
+ * Format time in seconds to MM:SS format
+ * @param {number} seconds - Time in seconds
+ * @returns {string} - Formatted time string
+ */
+function formatTime(seconds) {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+}
+
+/**
+ * Create a vector object
+ * @param {number} x - X component
+ * @param {number} y - Y component
+ * @returns {Object} - Vector object
+ */
+function createVector(x, y) {
+    return {
+        x,
+        y,
+        add(v) {
+            this.x += v.x;
+            this.y += v.y;
+            return this;
+        },
+        subtract(v) {
+            this.x -= v.x;
+            this.y -= v.y;
+            return this;
+        },
+        multiply(scalar) {
+            this.x *= scalar;
+            this.y *= scalar;
+            return this;
+        },
+        divide(scalar) {
+            if (scalar !== 0) {
+                this.x /= scalar;
+                this.y /= scalar;
+            }
+            return this;
+        },
+        magnitude() {
+            return Math.sqrt(this.x * this.x + this.y * this.y);
+        },
+        normalize() {
+            const mag = this.magnitude();
+            if (mag > 0) {
+                this.x /= mag;
+                this.y /= mag;
+            }
+            return this;
+        },
+        limit(max) {
+            const mag = this.magnitude();
+            if (mag > max) {
+                this.normalize();
+                this.multiply(max);
+            }
+            return this;
+        },
+        copy() {
+            return createVector(this.x, this.y);
+        }
+    };
 }

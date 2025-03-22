@@ -77,6 +77,10 @@ class Game {
             } else if (e.key === 'F4') {
                 this.debugRenderer.toggleOption('showSpawnPoints');
                 e.preventDefault();
+            } else if (e.key === ' ' && this.player) {
+                // Space bar for dash
+                this.player.dash();
+                e.preventDefault();
             }
         });
         
@@ -141,6 +145,17 @@ class Game {
                 this.camera.width = data.width;
                 this.camera.height = data.height;
             }
+        });
+        
+        // New event listeners for dash
+        eventEmitter.on('player:dashStart', (data) => {
+            // Visual or audio feedback for dash start
+            console.log('Dash started');
+        });
+        
+        eventEmitter.on('player:dashEnd', (data) => {
+            // Visual or audio feedback for dash end
+            console.log('Dash ended');
         });
     }
     
@@ -236,7 +251,7 @@ class Game {
             this.handlePlayerInput();
             
             // Update player
-            this.player.update(deltaTime, this.enemies);
+            this.player.update(deltaTime, this.enemies, this.worldBounds);
         }
         
         // Update camera
@@ -296,9 +311,11 @@ class Game {
             this.enemySpawnTimer = 1 / this.enemySpawnRate;
         }
         
-        // Check if wave is complete
+        // Check if wave is over
         if (this.waveTimer <= 0) {
-            this.completeWave();
+            this.waveTimer = 0;
+            this.startWave(this.currentWave + 1);
+            this.stats.wavesCompleted++;
         }
     }
     
@@ -306,16 +323,16 @@ class Game {
      * Spawn a new enemy
      */
     spawnEnemy() {
-        const enemy = EnemyFactory.createRandomEnemy(this.currentWave);
+        // Calculate spawn position outside of camera view
+        const spawnDistance = 100; // Distance outside of camera view
+        const angle = Math.random() * Math.PI * 2;
+        
+        const spawnX = this.player.x + Math.cos(angle) * (this.camera.width / this.camera.scale / 2 + spawnDistance);
+        const spawnY = this.player.y + Math.sin(angle) * (this.camera.height / this.camera.scale / 2 + spawnDistance);
+        
+        // Create enemy
+        const enemy = EnemyFactory.createEnemy(this.currentWave, spawnX, spawnY);
         this.enemies.push(enemy);
-    }
-    
-    /**
-     * Complete current wave and start next
-     */
-    completeWave() {
-        this.stats.wavesCompleted++;
-        this.startWave(this.currentWave + 1);
     }
     
     /**
@@ -324,11 +341,18 @@ class Game {
      */
     updateEnemies(deltaTime) {
         this.enemies.forEach(enemy => {
-            enemy.update(deltaTime, this.player);
+            if (enemy.isAlive) {
+                enemy.update(deltaTime, this.player, this.worldBounds);
+            }
         });
         
         // Remove dead enemies
-        this.enemies = this.enemies.filter(enemy => enemy.isAlive);
+        this.enemies = this.enemies.filter(enemy => {
+            if (!enemy.isAlive && enemy.deathTimer <= 0) {
+                return false;
+            }
+            return true;
+        });
     }
     
     /**
@@ -337,55 +361,24 @@ class Game {
      */
     updateProjectiles(deltaTime) {
         this.projectiles.forEach(projectile => {
-            // Move projectile
-            projectile.x += projectile.directionX * projectile.speed;
-            projectile.y += projectile.directionY * projectile.speed;
-            
-            // Update distance traveled
-            const distanceMoved = projectile.speed * deltaTime;
-            projectile.distanceTraveled += distanceMoved;
-            
-            // Check for collisions with enemies
-            this.enemies.forEach(enemy => {
-                if (!enemy.isAlive) return;
-                
-                const dist = distance(
-                    { x: projectile.x, y: projectile.y },
-                    { x: enemy.x, y: enemy.y }
-                );
-                
-                if (dist <= (projectile.size + enemy.size) / 2) {
-                    enemy.takeDamage(projectile.damage);
-                    
-                    // Remove projectile if not piercing
-                    if (!projectile.piercing) {
-                        projectile.distanceTraveled = projectile.range + 1; // Mark for removal
-                    }
-                }
-            });
+            projectile.update(deltaTime);
         });
         
-        // Remove projectiles that have traveled their range
-        this.projectiles = this.projectiles.filter(projectile => {
-            return projectile.distanceTraveled < projectile.range;
-        });
+        // Remove expired projectiles
+        this.projectiles = this.projectiles.filter(projectile => !projectile.isExpired);
     }
     
     /**
-     * Update area effects
+     * Update areas
      * @param {number} deltaTime - Time since last update in seconds
      */
     updateAreas(deltaTime) {
         this.areas.forEach(area => {
-            // Check if area is still active
-            const elapsedTime = (performance.now() - area.startTime) / 1000;
-            if (elapsedTime >= area.duration) {
-                area.active = false;
-            }
+            area.update(deltaTime);
         });
         
-        // Remove inactive areas
-        this.areas = this.areas.filter(area => area.active);
+        // Remove expired areas
+        this.areas = this.areas.filter(area => !area.isExpired);
     }
     
     /**
@@ -396,198 +389,93 @@ class Game {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         
         // Apply camera transformation
-        if (this.camera) {
-            this.camera.apply(this.ctx);
+        this.camera.apply(this.ctx);
+        
+        // Draw game world
+        this.drawWorld();
+        
+        // Draw game objects
+        this.drawGameObjects();
+        
+        // Restore camera transformation
+        this.camera.restore(this.ctx);
+        
+        // Draw UI
+        this.ui.draw(this.ctx);
+        
+        // Draw debug info
+        this.debugRenderer.draw(this.ctx);
+    }
+    
+    /**
+     * Draw game world
+     */
+    drawWorld() {
+        // Draw grid
+        const gridSize = 100;
+        const gridExtent = 1000;
+        
+        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+        this.ctx.lineWidth = 1;
+        
+        // Only draw grid if debug renderer is showing grid
+        if (this.debugRenderer.options.showGrid) {
+            for (let x = -gridExtent; x <= gridExtent; x += gridSize) {
+                this.ctx.beginPath();
+                this.ctx.moveTo(x, -gridExtent);
+                this.ctx.lineTo(x, gridExtent);
+                this.ctx.stroke();
+            }
+            
+            for (let y = -gridExtent; y <= gridExtent; y += gridSize) {
+                this.ctx.beginPath();
+                this.ctx.moveTo(-gridExtent, y);
+                this.ctx.lineTo(gridExtent, y);
+                this.ctx.stroke();
+            }
         }
         
-        // Draw background
-        this.drawBackground();
-        
+        // Draw world bounds
+        if (this.debugRenderer.options.showColliders) {
+            this.ctx.strokeStyle = 'rgba(255, 0, 0, 0.5)';
+            this.ctx.lineWidth = 2;
+            this.ctx.strokeRect(
+                this.worldBounds.minX,
+                this.worldBounds.minY,
+                this.worldBounds.maxX - this.worldBounds.minX,
+                this.worldBounds.maxY - this.worldBounds.minY
+            );
+        }
+    }
+    
+    /**
+     * Draw game objects
+     */
+    drawGameObjects() {
         // Draw areas
-        this.drawAreas();
+        this.areas.forEach(area => {
+            area.draw(this.ctx);
+        });
         
         // Draw projectiles
-        this.drawProjectiles();
+        this.projectiles.forEach(projectile => {
+            projectile.draw(this.ctx);
+        });
         
         // Draw enemies
-        this.drawEnemies();
+        this.enemies.forEach(enemy => {
+            if (this.camera.isVisible(enemy)) {
+                enemy.draw(this.ctx);
+            }
+        });
         
         // Draw player
-        if (this.player) {
+        if (this.player && this.player.isAlive) {
             this.player.draw(this.ctx);
         }
         
         // Draw attack animations
-        if (this.attackAnimations) {
-            this.attackAnimations.draw(this.ctx);
-        }
-        
-        // Restore camera transformation
-        if (this.camera) {
-            this.camera.restore(this.ctx);
-        }
-        
-        // Draw debug information
-        if (this.debugRenderer) {
-            this.debugRenderer.render(this.ctx, this.timeManager, this.camera);
-        }
-    }
-    
-    /**
-     * Draw background
-     */
-    drawBackground() {
-        // Draw world background
-        this.ctx.fillStyle = '#1a1a1a';
-        
-        if (this.camera) {
-            // Draw only the visible area
-            this.ctx.fillRect(
-                this.camera.x,
-                this.camera.y,
-                this.camera.width / this.camera.scale,
-                this.camera.height / this.camera.scale
-            );
-            
-            // Draw grid if not handled by debug renderer
-            if (!this.debugRenderer || !this.debugRenderer.isEnabled || !this.debugRenderer.options.showGrid) {
-                this.drawGrid();
-            }
-        } else {
-            // Draw full canvas
-            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-            
-            // Draw grid
-            this.drawGrid();
-        }
-    }
-    
-    /**
-     * Draw grid
-     */
-    drawGrid() {
-        this.ctx.strokeStyle = '#333333';
-        this.ctx.lineWidth = 1;
-        
-        const gridSize = 50;
-        
-        // Calculate grid boundaries based on camera position
-        let startX, startY, endX, endY;
-        
-        if (this.camera) {
-            startX = Math.floor(this.camera.x / gridSize) * gridSize;
-            startY = Math.floor(this.camera.y / gridSize) * gridSize;
-            endX = this.camera.x + (this.camera.width / this.camera.scale) + gridSize;
-            endY = this.camera.y + (this.camera.height / this.camera.scale) + gridSize;
-        } else {
-            startX = 0;
-            startY = 0;
-            endX = this.canvas.width;
-            endY = this.canvas.height;
-        }
-        
-        // Draw vertical lines
-        for (let x = startX; x <= endX; x += gridSize) {
-            this.ctx.beginPath();
-            this.ctx.moveTo(x, startY);
-            this.ctx.lineTo(x, endY);
-            this.ctx.stroke();
-        }
-        
-        // Draw horizontal lines
-        for (let y = startY; y <= endY; y += gridSize) {
-            this.ctx.beginPath();
-            this.ctx.moveTo(startX, y);
-            this.ctx.lineTo(endX, y);
-            this.ctx.stroke();
-        }
-    }
-    
-    /**
-     * Draw enemies
-     */
-    drawEnemies() {
-        this.enemies.forEach(enemy => {
-            // Only draw if visible in camera
-            if (!this.camera || this.camera.isVisible(enemy)) {
-                enemy.draw(this.ctx);
-            }
-        });
-    }
-    
-    /**
-     * Draw projectiles
-     */
-    drawProjectiles() {
-        this.projectiles.forEach(projectile => {
-            // Only draw if visible in camera
-            if (!this.camera || this.camera.isVisible(projectile)) {
-                this.ctx.fillStyle = this.getElementColor(projectile.element || ELEMENT_TYPES.PHYSICAL);
-                this.ctx.beginPath();
-                this.ctx.arc(projectile.x, projectile.y, projectile.size / 2, 0, Math.PI * 2);
-                this.ctx.fill();
-            }
-        });
-    }
-    
-    /**
-     * Draw area effects
-     */
-    drawAreas() {
-        this.areas.forEach(area => {
-            // Only draw if visible in camera
-            if (!this.camera || this.camera.isVisible({
-                x: area.x,
-                y: area.y,
-                size: area.radius * 2
-            })) {
-                const elapsedTime = (performance.now() - area.startTime) / 1000;
-                const progress = elapsedTime / area.duration;
-                const alpha = 1 - progress;
-                
-                this.ctx.fillStyle = this.getElementColor(area.element || ELEMENT_TYPES.PHYSICAL, alpha * 0.3);
-                this.ctx.beginPath();
-                this.ctx.arc(area.x, area.y, area.radius, 0, Math.PI * 2);
-                this.ctx.fill();
-                
-                this.ctx.strokeStyle = this.getElementColor(area.element || ELEMENT_TYPES.PHYSICAL, alpha);
-                this.ctx.lineWidth = 3;
-                this.ctx.beginPath();
-                this.ctx.arc(area.x, area.y, area.radius, 0, Math.PI * 2);
-                this.ctx.stroke();
-            }
-        });
-    }
-    
-    /**
-     * Get color for element type
-     * @param {string} element - Element type
-     * @param {number} alpha - Alpha value (0-1)
-     * @returns {string} - CSS color
-     */
-    getElementColor(element, alpha = 1) {
-        let color;
-        
-        switch (element) {
-            case ELEMENT_TYPES.FIRE:
-                color = `rgba(255, 100, 0, ${alpha})`;
-                break;
-            case ELEMENT_TYPES.ICE:
-                color = `rgba(0, 200, 255, ${alpha})`;
-                break;
-            case ELEMENT_TYPES.LIGHTNING:
-                color = `rgba(255, 255, 0, ${alpha})`;
-                break;
-            case ELEMENT_TYPES.ARCANE:
-                color = `rgba(200, 0, 255, ${alpha})`;
-                break;
-            case ELEMENT_TYPES.PHYSICAL:
-            default:
-                color = `rgba(200, 200, 200, ${alpha})`;
-                break;
-        }
-        
-        return color;
+        this.attackAnimations.draw(this.ctx);
     }
     
     /**
@@ -602,14 +490,12 @@ class Game {
      */
     resume() {
         this.isPaused = false;
-        this.timeManager.reset();
     }
     
     /**
-     * Get game stats
-     * @returns {Object} - Game stats
+     * Toggle pause state
      */
-    getStats() {
-        return this.stats;
+    togglePause() {
+        this.isPaused = !this.isPaused;
     }
 }
