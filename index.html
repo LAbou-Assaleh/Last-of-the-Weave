@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Last of the Weave</title>
+    <link rel="stylesheet" href="src/css/style.css">
+</head>
+<body>
+    <div id="game-container">
+        <div id="game-canvas-container">
+            <canvas id="game-canvas"></canvas>
+        </div>
+        <div id="ui-container">
+            <div id="health-bar-container">
+                <div id="health-bar"></div>
+            </div>
+            <div id="xp-bar-container">
+                <div id="xp-bar"></div>
+            </div>
+            <div id="wave-counter">Wave: 1</div>
+            <div id="time-counter">Time: 00:00</div>
+        </div>
+        <div id="upgrade-panel" class="hidden">
+            <h2>Choose an Upgrade</h2>
+            <div id="upgrade-options"></div>
+        </div>
+        <div id="game-over-screen" class="hidden">
+            <h2>Game Over</h2>
+            <div id="score-summary"></div>
+            <button id="restart-button">Play Again</button>
+        </div>
+        <div id="start-screen">
+            <h1>Last of the Weave</h1>
+            <p>Survive endless waves of enemies by weaving together powerful abilities</p>
+            <div id="character-selection">
+                <h2>Select Your Weaver</h2>
+                <div id="character-options"></div>
+            </div>
+            <button id="start-button">Start Game</button>
+        </div>
+    </div>
+
+    <!-- Core Game Scripts -->
+    <script src="src/js/utils/constants.js"></script>
+    <script src="src/js/utils/helpers.js"></script>
+    <script src="src/js/utils/eventEmitter.js"></script>
+    
+    <!-- Game Components -->
+    <script src="src/js/characters/character.js"></script>
+    <script src="src/js/enemies/enemy.js"></script>
+    <script src="src/js/abilities/ability.js"></script>
+    
+    <!-- UI Components -->
+    <script src="src/js/ui/ui.js"></script>
+    
+    <!-- Main Game Logic -->
+    <script src="src/js/game.js"></script>
+    <script src="src/js/main.js"></script>
+</body>
+</html>
