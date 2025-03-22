@@ -57,13 +57,25 @@ This file tracks prioritized tasks, dependencies, and status for the Last of the
 
 - [ ] Implement experience and leveling system
   - Dependencies: Combat system
-  - Priority: Medium
+  - Priority: High
+  - Subtasks:
+    - [ ] Add XP drops from defeated enemies
+    - [ ] Implement XP collection mechanics
+    - [ ] Create scaling XP requirements for each level
+    - [ ] Add level-up visual effects and notifications
+    - [ ] Implement ability selection upon leveling up
 
 ## Game Systems
 
 - [ ] Implement wave management
   - Dependencies: Enemy spawning system
-  - Priority: Medium
+  - Priority: High
+  - Subtasks:
+    - [ ] Implement difficulty ramping with each wave
+    - [ ] Add boss waves every 10 waves
+    - [ ] Create special boss enemies with unique abilities
+    - [ ] Scale enemy health and damage with wave progression
+    - [ ] Add visual indicators for wave transitions
 
 - [ ] Implement ability/upgrade selection
   - Dependencies: Experience and leveling system
