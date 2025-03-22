@@ -22,19 +22,39 @@ This file tracks the development progress of the Last of the Weave game, a brows
   - Main game loop and state management
 - Established documentation files (PROGRESS.md, TODO.md, DECISIONS.md)
 
+### Core Gameplay Implementation - March 22, 2025
+
+- Implemented enhanced canvas rendering system:
+  - Created responsive canvas with proper window size handling
+  - Developed a camera/viewport system for the game world
+  - Added a time manager for consistent frame timing
+  - Implemented debug rendering tools for development
+- Enhanced player character movement:
+  - Added smooth acceleration and deceleration
+  - Implemented boundary collision detection
+  - Created visual feedback for movement and actions
+  - Improved keyboard input handling
+- Developed enemy spawning system:
+  - Created wave-based spawning with increasing difficulty
+  - Implemented spawn points outside visible screen area
+  - Added various enemy types with different behaviors
+  - Developed AI for enemies to follow and attack player
+- Updated documentation to reflect current progress
+- Created feature branch for core gameplay mechanics
+
 ## Current Status
 
-The project is in the initial setup phase. The basic structure and foundation have been established, but no gameplay is implemented yet. The next steps will focus on implementing core gameplay mechanics and iteratively adding features.
+The project now has functional core gameplay mechanics implemented. Players can move around the game world with smooth controls, enemies spawn and follow the player, and the basic game loop is working. The canvas rendering system provides a solid foundation for future visual enhancements. The next steps will focus on implementing collision detection, combat system, and experience/leveling mechanics.
 
 ## Next Steps
 
-- Implement basic player movement and controls
-- Add enemy spawning and wave system
-- Implement collision detection and combat
-- Create basic ability selection and upgrade system
-- Add game state management (start, pause, game over)
-- Implement basic visual effects and feedback
+- Implement collision detection between player and enemies
+- Create combat system with auto-attack functionality
+- Develop experience and leveling system
+- Add ability selection and upgrade system
+- Implement game state management (start, pause, game over)
+- Add visual effects and feedback for combat
 
 ## Known Issues
 
-- None at this stage (initial setup)
+- None at this stage (core gameplay implementation)
