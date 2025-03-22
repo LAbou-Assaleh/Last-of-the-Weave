@@ -17,6 +17,7 @@ This file tracks prioritized tasks, dependencies, and status for the Last of the
 - [✓] Create documentation files (PROGRESS.md, TODO.md, DECISIONS.md)
 - [✓] Create development roadmap
 - [✓] Push initial setup to GitHub repository
+- [✓] Set up GitHub Pages deployment
 
 ## Core Game Mechanics
 
@@ -47,11 +48,11 @@ This file tracks prioritized tasks, dependencies, and status for the Last of the
     - [✓] Add basic enemy movement AI to follow player
     - [✓] Create different enemy types with varying behaviors
 
-- [ ] Implement collision detection
+- [🔄] Implement collision detection
   - Dependencies: Player movement, Enemy spawning
   - Priority: High
 
-- [ ] Implement combat system (auto-attack)
+- [🔄] Implement combat system (auto-attack)
   - Dependencies: Collision detection
   - Priority: High
 
@@ -95,13 +96,13 @@ This file tracks prioritized tasks, dependencies, and status for the Last of the
 
 ## UI Implementation
 
-- [ ] Implement health and XP bars
+- [🔄] Implement health and XP bars
   - Dependencies: Combat system, Experience system
-  - Priority: Medium
+  - Priority: High
 
-- [ ] Implement wave and time counters
+- [🔄] Implement wave and time counters
   - Dependencies: Wave management
-  - Priority: Low
+  - Priority: Medium
 
 - [ ] Implement upgrade selection panel
   - Dependencies: Ability/upgrade selection
@@ -109,17 +110,17 @@ This file tracks prioritized tasks, dependencies, and status for the Last of the
 
 - [ ] Implement game over screen
   - Dependencies: Combat system
-  - Priority: Low
+  - Priority: Medium
 
-- [ ] Implement character selection screen
+- [🔄] Implement character selection screen
   - Dependencies: None
-  - Priority: Low
+  - Priority: Medium
 
 ## Visual and Polish
 
 - [ ] Add basic visual effects for abilities
   - Dependencies: Ability system
-  - Priority: Low
+  - Priority: Medium
 
 - [✓] Add visual feedback for attacks and damage
   - Dependencies: Combat system
@@ -133,7 +134,7 @@ This file tracks prioritized tasks, dependencies, and status for the Last of the
 
 - [ ] Add basic sound effects
   - Dependencies: None
-  - Priority: Low
+  - Priority: Medium
 
 - [ ] Add background music
   - Dependencies: None
@@ -141,14 +142,14 @@ This file tracks prioritized tasks, dependencies, and status for the Last of the
 
 ## Deployment
 
-- [ ] Set up GitHub Pages deployment
+- [✓] Set up GitHub Pages deployment
   - Dependencies: Functional game
-  - Priority: Low
+  - Priority: Medium
 
-- [ ] Create README with instructions
+- [✓] Create README with instructions
   - Dependencies: None
   - Priority: Medium
 
 - [ ] Test cross-browser compatibility
   - Dependencies: Functional game
-  - Priority: Low
+  - Priority: Medium
