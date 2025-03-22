@@ -109,9 +109,15 @@ This file tracks prioritized tasks, dependencies, and status for the Last of the
   - Dependencies: Ability system
   - Priority: Low
 
-- [ ] Add visual feedback for damage
+- [✓] Add visual feedback for attacks and damage
   - Dependencies: Combat system
-  - Priority: Low
+  - Priority: High
+  - Subtasks:
+    - [✓] Implement player attack animations
+    - [✓] Implement enemy attack animations
+    - [✓] Add impact effects at point of damage
+    - [✓] Add floating damage numbers
+    - [✓] Create attack cooldown indicators
 
 - [ ] Add basic sound effects
   - Dependencies: None

@@ -41,6 +41,9 @@ class Game {
         this.camera = new Camera(window.innerWidth, window.innerHeight);
         this.resizeHandler = new ResizeHandler(this.canvas, this);
         this.debugRenderer = new DebugRenderer(this);
+        this.attackAnimations = new AttackAnimationManager();
+        this.enemyAttackEffects = new EnemyAttackEffects(this.attackAnimations);
+        this.damageEffects = new DamageEffects(this.attackAnimations);
         
         // UI
         this.ui = new UI(this);
@@ -253,6 +256,9 @@ class Game {
         // Update areas
         this.updateAreas(deltaTime);
         
+        // Update attack animations
+        this.attackAnimations.update(deltaTime);
+        
         // Check for game over
         if (this.player && !this.player.isAlive && this.state !== GAME_STATES.GAME_OVER) {
             this.state = GAME_STATES.GAME_OVER;
@@ -409,6 +415,11 @@ class Game {
         // Draw player
         if (this.player) {
             this.player.draw(this.ctx);
+        }
+        
+        // Draw attack animations
+        if (this.attackAnimations) {
+            this.attackAnimations.draw(this.ctx);
         }
         
         // Restore camera transformation
