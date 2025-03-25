@@ -157,6 +157,17 @@ class Game {
             // Visual or audio feedback for dash end
             console.log('Dash ended');
         });
+        
+        // Enemy attack event listener
+        eventEmitter.on('enemy:attack', (data) => {
+            // Handle enemy attack event
+            console.log(`Enemy attacked player for ${data.damage} damage`);
+            
+            // Visual feedback for enemy attack
+            if (this.enemyAttackEffects) {
+                this.enemyAttackEffects.createPrepareAnimation(data.enemy, data.target);
+            }
+        });
     }
     
     /**

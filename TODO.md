@@ -62,9 +62,9 @@ This file tracks prioritized tasks, dependencies, and status for the Last of the
   - Dependencies: Player movement, Enemy spawning
   - Priority: High
   - Subtasks:
-    - [ ] Create checkCollision function in helpers.js
-    - [ ] Implement circle-based collision detection between entities
-    - [ ] Add collision response for player-enemy interactions
+    - [✓] Create checkCollision function in helpers.js
+    - [✓] Implement circle-based collision detection between entities
+    - [🔄] Add collision response for player-enemy interactions
     - [ ] Optimize collision detection for performance
 
 - [🔄] Implement combat system (auto-attack)
@@ -185,14 +185,14 @@ This file tracks prioritized tasks, dependencies, and status for the Last of the
   - Priority: Critical
   - Subtasks:
     - [✓] Implement missing checkCollision function in helpers.js
-    - [ ] Connect collision detection with combat system
+    - [🔄] Connect collision detection with combat system
     - [ ] Test collision detection with different entity sizes
 
 - [🔄] Fix combat system
   - Priority: Critical
   - Subtasks:
     - [ ] Ensure auto-attack works properly with collision detection
-    - [ ] Fix enemy attack logic
+    - [🔄] Fix enemy attack logic
     - [ ] Add proper combat feedback (visual and gameplay)
 
 - [🔄] Enhance wave spawning system

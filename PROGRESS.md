@@ -115,14 +115,14 @@ This file tracks the development progress of the Last of the Weave game, a brows
 
 The project now has a fully functional character selection system and advanced movement mechanics implemented on top of the core gameplay. Players can select from three character types (Warrior, Mage, Ranger), each with unique stats and attributes, and move around the game world with smooth controls that include momentum-based physics and a dash ability for quick evasive maneuvers. The movement system provides visual feedback through trail effects and dash animations. 
 
-Enemies spawn and follow the player, but collision detection between players and enemies is incomplete, preventing proper combat functionality. The auto-attack system is partially implemented but cannot function correctly without collision detection. The wave spawning system works at a basic level but needs enhancements for proper difficulty scaling and boss waves.
+The collision detection system is partially implemented. The checkCollision function exists in helpers.js and is being called when enemies collide with the player, but the player damage functionality is not fully connected. Enemies spawn and follow the player, and while they attempt to attack on collision, the damage is not being properly applied to the player. The auto-attack system is partially implemented but needs refinement. The wave spawning system works at a basic level but needs enhancements for proper difficulty scaling and boss waves.
 
-The canvas rendering system provides a solid foundation for future visual enhancements. The next steps will focus on implementing collision detection, completing the combat system, and enhancing the wave spawning system.
+The canvas rendering system provides a solid foundation for future visual enhancements. The next steps will focus on completing the collision detection implementation to enable player damage from mobs, fixing the combat system, and enhancing the wave spawning system.
 
 ## Next Steps
 
-- Implement proper collision detection between player and enemies
-- Fix the combat system to enable auto-attack functionality
+- Complete collision detection implementation to enable player damage from mobs
+- Fix the combat system to enable proper auto-attack functionality
 - Enhance wave spawning system with proper difficulty scaling
 - Add boss waves every 10 waves
 - Develop experience and leveling system
@@ -132,8 +132,8 @@ The canvas rendering system provides a solid foundation for future visual enhanc
 
 ## Known Issues
 
-- Missing checkCollision function that is referenced in enemy.js but not implemented
-- Incomplete collision detection system preventing proper combat functionality
+- Collision detection function exists but player damage functionality is not properly connected
+- Enemy attack logic needs to be fixed to properly apply damage to the player
 - Auto-attack system partially implemented but not fully functional
 - Wave spawning system needs enhancements for proper difficulty scaling
 - No boss waves implemented yet
